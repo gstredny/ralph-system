@@ -57,6 +57,23 @@ If a PRD task is ambiguous about product behavior:
 - [design] tasks: Log your reasoning, surface alternatives considered
 - [review] tasks: Run full test suite, check for issues
 
+## Learning Capture (CRITICAL)
+After completing each task, update AGENTS.md in the relevant directory:
+
+1. **Patterns discovered:** Add to "## Patterns" section
+   - "This codebase uses X for Y"
+   - "Component Z follows this structure..."
+
+2. **Gotchas found:** Add to "## Gotchas" section
+   - "Don't forget to update X when changing Y"
+   - "This API requires Z header"
+
+3. **Useful context:** Add to "## Context" section
+   - "Settings panel is in src/components/settings/"
+   - "Auth flow goes through middleware X"
+
+Create AGENTS.md if it doesn't exist. Learnings persist for future iterations AND human developers.
+
 ## Rules
 - ONE task per iteration
 - Do NOT skip testing or validation
