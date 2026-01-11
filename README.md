@@ -1,90 +1,88 @@
 # Ralph System
 
-Simple autonomous development loop for Claude Code.
+Autonomous development loop for Claude Code.
 
-## Structure
+## Scripts
 
-```
-~/ralph-system/
-├── ralph-init.sh           # Initialize any project
-├── ralph-loop.sh           # Main loop runner
-├── templates/
-│   ├── prd-template.md     # PRD template (markdown tasks)
-│   └── PROMPT.md           # Iteration prompt
-└── README.md
-```
-
-## Quick Start
-
-```bash
-# 1. Create and enter project directory
-mkdir my-project && cd my-project
-
-# 2. Initialize Ralph
-~/ralph-system/ralph-init.sh my-project
-
-# 3. Edit prd.md with your tasks
-# (or run: /interview @prd.md)
-
-# 4. Run the loop
-~/ralph-system/ralph-loop.sh 20
-```
+| Script | Purpose |
+|--------|---------|
+| `ralph-loop.sh <n>` | Run n iterations |
+| `ralph-review.sh` | Code review agent |
+| `ralph-validate.sh` | Runtime validation |
+| `ralph-validate-all.sh` | Comprehensive test suite |
+| `ralph-decisions.sh` | Review decisions & blocked items |
+| `ralph-init.sh` | Initialize new project |
 
 ## Workflow
 
-Each iteration follows Kanban flow:
+1. Create project, write rough idea.md
+2. `/interview @idea.md` - flesh out PRD with tasks
+3. `ralph-loop.sh 20` - run autonomous loop
+4. `ralph-decisions` - review decisions made
+5. `ralph-validate.sh` - verify everything works
+6. Repeat until complete
 
-1. **SELECT** - Pick highest-priority unchecked task
-2. **IMPLEMENT** - Write the code
-3. **CODE REVIEW** - Self-review for edge cases, errors, security
-4. **TESTING** - Write/run tests
-5. **VALIDATION** - Verify feature works
-6. **COMMIT** - Mark task `[x]`, update progress.txt, git commit
+## Task Types
+
+PRD tasks use type prefixes:
+
+- `[impl]` - Implementation: Claude decides and proceeds
+- `[design]` - Design choice: Claude logs reasoning, surfaces alternatives
+- `[review]` - Checkpoint: Run tests and audit
+
+Example:
+```markdown
+- [ ] [impl] Create firebase.ts - Firebase client init
+- [ ] [design] Define auth error handling - toast vs inline vs redirect
+- [ ] [review] Code review: Phase 1 security audit
+```
+
+## Decision Logging
+
+When Claude makes design choices, it logs to progress.txt:
+```
+DECISION: [what was chosen] REASON: [why]
+```
+
+## Ambiguity Handling
+
+If a task is ambiguous about product behavior:
+```
+BLOCKED: [task name] - QUESTION: [specific question]
+```
+
+Claude skips blocked tasks. Human reviews before next run.
 
 ## Files in Your Project
 
 | File | Purpose |
 |------|---------|
-| `prd.md` | Your tasks with `- [ ]` checkboxes |
-| `progress.txt` | Session handoff log, context for next run |
+| `prd.md` | Tasks with `- [ ]` checkboxes |
+| `progress.txt` | Session log, decisions, blocked items |
+| `CODE_REVIEW.md` | Output from ralph-review.sh |
 
-## Usage
+## Quick Start
 
 ```bash
-# Run 20 iterations
+# Initialize
+mkdir my-project && cd my-project
+~/ralph-system/ralph-init.sh my-project
+
+# Create PRD (interactive)
+/interview @idea.md
+
+# Run loop
 ~/ralph-system/ralph-loop.sh 20
 
-# Single iteration (manual)
-claude --dangerously-skip-permissions -p '@prd.md @progress.txt $(cat ~/ralph-system/templates/PROMPT.md)'
+# Check decisions
+ralph-decisions
+
+# Validate
+~/ralph-system/ralph-validate.sh
 ```
 
 ## Exit Conditions
 
-- Loop exits when all tasks are `[x]` checked (outputs `<promise>COMPLETE</promise>`)
-- Or when max iterations reached
-
-## PRD Format
-
-```markdown
-# Project: my-project
-
-## Overview
-What we're building.
-
-## Tech Stack
-- Python 3.11
-- FastAPI
-
-## Features / Tasks
-
-### Phase 1: Foundation
-- [ ] Task 1: Set up project structure
-- [ ] Task 2: Create database models
-
-### Phase 2: Core
-- [x] Task 3: (completed)
-- [ ] Task 4: Implement API endpoints
-
-## Notes
-- Any context for the AI
-```
+- All tasks checked `[x]` (outputs `<promise>COMPLETE</promise>`)
+- Max iterations reached
+- All remaining tasks blocked

@@ -33,6 +33,30 @@ Read @prd.md and @progress.txt to understand the project and what's been done.
 - Append summary to progress.txt
 - Git commit: "Complete: [task name]"
 
+## E2E Testing Requirements
+For frontend tasks:
+- If Playwright is set up, run `npx playwright test` after changes
+- All E2E tests must pass before marking task complete
+- If creating a new user-facing feature, create E2E test in tests/e2e/
+
+## Decision Logging
+When you make a design choice (not just implementation), log it in progress.txt:
+- Format: "DECISION: [what you chose] REASON: [why]"
+- Design choices include: data structure, API shape, error handling strategy, UI behavior, state management approach
+- Implementation details (don't log): syntax choice, variable names, import order, formatting
+
+## Ambiguity Handling
+If a PRD task is ambiguous about product behavior:
+- Do NOT guess and continue
+- Add to progress.txt: "BLOCKED: [task name] - QUESTION: [specific question needing human input]"
+- Skip this task, move to next unchecked task
+- Human reviews blocked items before next Ralph run
+
+## Task Types
+- [impl] tasks: Make decisions and proceed
+- [design] tasks: Log your reasoning, surface alternatives considered
+- [review] tasks: Run full test suite, check for issues
+
 ## Rules
 - ONE task per iteration
 - Do NOT skip testing or validation
