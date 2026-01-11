@@ -58,7 +58,7 @@ If a PRD task is ambiguous about product behavior:
 - [review] tasks: Run full test suite, check for issues
 
 ## Learning Capture (CRITICAL)
-After completing each task, update AGENTS.md in the relevant directory:
+After completing each task, update CLAUDE.md in the project root:
 
 1. **Patterns discovered:** Add to "## Patterns" section
    - "This codebase uses X for Y"
@@ -72,7 +72,7 @@ After completing each task, update AGENTS.md in the relevant directory:
    - "Settings panel is in src/components/settings/"
    - "Auth flow goes through middleware X"
 
-Create AGENTS.md if it doesn't exist. Learnings persist for future iterations AND human developers.
+Create CLAUDE.md if it doesn't exist. Claude Code auto-reads this file - learnings persist automatically.
 
 ## Rules
 - ONE task per iteration

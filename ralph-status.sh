@@ -42,12 +42,13 @@ else
 fi
 
 echo ""
-echo "🧠 AGENTS.md files (learnings):"
-agents_files=$(find . -name "AGENTS.md" -type f 2>/dev/null | head -5)
-if [ -n "$agents_files" ]; then
-    echo "$agents_files"
+echo "🧠 CLAUDE.md (learnings):"
+if [ -f "CLAUDE.md" ]; then
+    # Show last 5 lines or patterns/gotchas sections
+    echo "  Found: ./CLAUDE.md"
+    grep -E "^## (Patterns|Gotchas|Context)" CLAUDE.md 2>/dev/null | head -3 || echo "  (no sections yet)"
 else
-    echo "  None yet"
+    echo "  None yet - will be created on first learning"
 fi
 
 echo ""
