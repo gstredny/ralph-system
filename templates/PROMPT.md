@@ -1,85 +1,52 @@
 # Ralph Autonomous Development Loop
 
-Read @prd.md and @progress.txt to understand the project and what's been done.
+Read prd.json and progress.txt to understand the project and what's been done.
 
-## Your workflow (Kanban flow):
+## Your workflow:
 
-### 1. SELECT (WIP)
-- Find the highest-priority unchecked task in prd.md
-- Only work on ONE task
+### 1. SELECT
+- Parse prd.json
+- Find the lowest priority story where "passes": false
+- Only work on ONE story per iteration
 
 ### 2. IMPLEMENT
-- Write the code for this task
+- Write the code for this story
 - Follow existing patterns in the codebase
+- Match the coding style already present
 
-### 3. CODE REVIEW
+### 3. VERIFY ACCEPTANCE CRITERIA
+- Check each acceptance criterion is met
+- If "Typecheck passes" - run typecheck
+- If "Tests pass" - run test suite
+- If "Verify in browser" - describe what you verified
+
+### 4. CODE REVIEW
 - Review your own code critically
-- Check for: edge cases, error handling, code style, security
-- Fix any issues before proceeding
+- Check: edge cases, error handling, security
+- Fix issues before proceeding
 
-### 4. TESTING
-- Run ALL tests (not just new ones): `pytest` or equivalent
-- All tests must pass before proceeding
-- If tests fail, fix them before moving on
+### 5. UPDATE prd.json
+- Set "passes": true for the completed story
+- Add any learnings to "notes" field
 
-### 5. VALIDATION
-- If Docker/containers involved: `docker-compose up -d` must work
-- Health endpoints must respond
-- No import errors, no crashes on startup
-- App must be in working state
+### 6. UPDATE CLAUDE.md
+After completing each story, update CLAUDE.md:
+- **Patterns discovered:** Add to "## Patterns" section
+- **Gotchas found:** Add to "## Gotchas" section
+- **Useful context:** Add to "## Context" section
+Create CLAUDE.md if it doesn't exist. This is CRITICAL for future iterations.
 
-### 6. COMMIT
-- Mark task complete in prd.md: [ ] → [x]
+### 7. COMMIT
 - Append summary to progress.txt
-- Git commit: "Complete: [task name]"
-
-## E2E Testing Requirements
-For frontend tasks:
-- If Playwright is set up, run `npx playwright test` after changes
-- All E2E tests must pass before marking task complete
-- If creating a new user-facing feature, create E2E test in tests/e2e/
-
-## Decision Logging
-When you make a design choice (not just implementation), log it in progress.txt:
-- Format: "DECISION: [what you chose] REASON: [why]"
-- Design choices include: data structure, API shape, error handling strategy, UI behavior, state management approach
-- Implementation details (don't log): syntax choice, variable names, import order, formatting
-
-## Ambiguity Handling
-If a PRD task is ambiguous about product behavior:
-- Do NOT guess and continue
-- Add to progress.txt: "BLOCKED: [task name] - QUESTION: [specific question needing human input]"
-- Skip this task, move to next unchecked task
-- Human reviews blocked items before next Ralph run
-
-## Task Types
-- [impl] tasks: Make decisions and proceed
-- [design] tasks: Log your reasoning, surface alternatives considered
-- [review] tasks: Run full test suite, check for issues
-
-## Learning Capture (CRITICAL)
-After completing each task, update CLAUDE.md in the project root:
-
-1. **Patterns discovered:** Add to "## Patterns" section
-   - "This codebase uses X for Y"
-   - "Component Z follows this structure..."
-
-2. **Gotchas found:** Add to "## Gotchas" section
-   - "Don't forget to update X when changing Y"
-   - "This API requires Z header"
-
-3. **Useful context:** Add to "## Context" section
-   - "Settings panel is in src/components/settings/"
-   - "Auth flow goes through middleware X"
-
-Create CLAUDE.md if it doesn't exist. Claude Code auto-reads this file - learnings persist automatically.
+- Git commit: "Complete: US-XXX [story title]"
 
 ## Rules
-- ONE task per iteration
-- Do NOT skip testing or validation
-- Leave codebase in WORKING state - app must start
-- If blocked, document in progress.txt and move to next task
+- ONE story per iteration
+- Do NOT skip acceptance criteria verification
+- ALWAYS update CLAUDE.md with learnings
+- Leave codebase in WORKING state
+- If blocked, add reason to story "notes" and move to next story
 
 ## Completion
-If all tasks in prd.md are checked [x], output:
+When ALL stories have "passes": true, output exactly:
 <promise>COMPLETE</promise>

@@ -1,47 +1,77 @@
 #!/bin/bash
-set -e
+# Initialize a new Ralph project
 
 PROJECT_NAME=${1:-$(basename $(pwd))}
+BRANCH_NAME="ralph/$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
 
-echo "Initializing Ralph project: $PROJECT_NAME"
+echo "🚀 Initializing Ralph project: $PROJECT_NAME"
 
-# Create PRD from template
-if [ ! -f "prd.md" ]; then
-    cp ~/ralph-system/templates/prd-template.md prd.md
-    sed -i "s/PROJECT_NAME/$PROJECT_NAME/g" prd.md 2>/dev/null || sed -i '' "s/PROJECT_NAME/$PROJECT_NAME/g" prd.md
-    echo "Created prd.md"
+# Create prd.json template
+if [ ! -f "prd.json" ]; then
+    cat > prd.json << EOF
+{
+  "project": "$PROJECT_NAME",
+  "branchName": "$BRANCH_NAME",
+  "description": "TODO: Describe what you're building",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "TODO: First task",
+      "description": "As a user, I need X so that Y",
+      "acceptanceCriteria": [
+        "TODO: Specific testable outcome",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
+EOF
+    echo "✅ Created prd.json"
 else
-    echo "prd.md already exists, skipping"
+    echo "ℹ️  prd.json already exists"
 fi
 
 # Create progress.txt
 if [ ! -f "progress.txt" ]; then
     cat > progress.txt << EOF
-=== Progress Log for $PROJECT_NAME ===
-Initialized: $(date)
+# Ralph Progress Log
+Project: $PROJECT_NAME
+Branch: $BRANCH_NAME
+Started: $(date)
 ---
 EOF
-    echo "Created progress.txt"
+    echo "✅ Created progress.txt"
+fi
+
+# Create CLAUDE.md if missing
+if [ ! -f "CLAUDE.md" ]; then
+    cat > CLAUDE.md << EOF
+# $PROJECT_NAME
+
+## Patterns
+<!-- Add patterns discovered during development -->
+
+## Gotchas
+<!-- Add gotchas and things to watch out for -->
+
+## Context
+<!-- Add useful context about the codebase -->
+EOF
+    echo "✅ Created CLAUDE.md"
 fi
 
 # Init git if needed
 if [ ! -d ".git" ]; then
     git init
-    echo "Initialized git"
-fi
-
-# Init beads if available
-if command -v bd &> /dev/null; then
-    if [ ! -d ".beads" ]; then
-        bd init --quiet
-        echo "Initialized beads"
-    fi
+    echo "✅ Initialized git"
 fi
 
 echo ""
-echo "Next steps:"
-echo "  1. Edit prd.md with your tasks (or run /interview @prd.md)"
+echo "📋 Next steps:"
+echo "  1. Edit prd.json with your user stories"
+echo "     OR run /interview to generate it"
 echo "  2. Run: ~/ralph-system/ralph-loop.sh 20"
-echo ""
-echo "  Or for single iteration:"
-echo "  claude --dangerously-skip-permissions -p '@prd.md @progress.txt \$(cat ~/ralph-system/templates/PROMPT.md)'"
+echo "  3. Monitor: ~/ralph-system/ralph-status.sh"
