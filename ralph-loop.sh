@@ -11,17 +11,21 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(pwd)"
 
-# Parse arguments - detect if first arg is a file or number
+# Parse arguments - supports both orders:
+#   ./ralph-loop.sh 20
+#   ./ralph-loop.sh 20 prd-feature.json
+#   ./ralph-loop.sh prd-feature.json 20
 if [[ "$1" =~ ^[0-9]+$ ]]; then
-    # First arg is a number (iterations)
-    MAX_ITERATIONS=${1:-10}
-    PRD_FILE="$PROJECT_DIR/prd.json"
+    MAX_ITERATIONS=$1
+    if [[ -n "$2" && "$2" == *.json ]]; then
+        PRD_FILE="$PROJECT_DIR/$2"
+    else
+        PRD_FILE="$PROJECT_DIR/prd.json"
+    fi
 elif [[ -n "$1" && "$1" == *.json ]]; then
-    # First arg is a JSON file
     PRD_FILE="$PROJECT_DIR/$1"
     MAX_ITERATIONS=${2:-10}
 else
-    # Default behavior
     MAX_ITERATIONS=${1:-10}
     PRD_FILE="$PROJECT_DIR/prd.json"
 fi
