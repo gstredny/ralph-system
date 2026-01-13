@@ -3,6 +3,7 @@
 
 PROJECT_NAME=${1:-$(basename $(pwd))}
 BRANCH_NAME="ralph/$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "🚀 Initializing Ralph project: $PROJECT_NAME"
 
@@ -13,23 +14,10 @@ if [ ! -f "prd.json" ]; then
   "project": "$PROJECT_NAME",
   "branchName": "$BRANCH_NAME",
   "description": "TODO: Describe what you're building",
-  "userStories": [
-    {
-      "id": "US-001",
-      "title": "TODO: First task",
-      "description": "As a user, I need X so that Y",
-      "acceptanceCriteria": [
-        "TODO: Specific testable outcome",
-        "Tests pass"
-      ],
-      "priority": 1,
-      "passes": false,
-      "notes": ""
-    }
-  ]
+  "userStories": []
 }
 EOF
-    echo "✅ Created prd.json"
+    echo "✅ Created prd.json (empty - run /interview to populate)"
 else
     echo "ℹ️  prd.json already exists"
 fi
@@ -46,21 +34,19 @@ EOF
     echo "✅ Created progress.txt"
 fi
 
-# Create CLAUDE.md if missing
+# Copy CLAUDE.md from template (don't overwrite if exists)
 if [ ! -f "CLAUDE.md" ]; then
-    cat > CLAUDE.md << EOF
-# $PROJECT_NAME
-
-## Patterns
-<!-- Add patterns discovered during development -->
-
-## Gotchas
-<!-- Add gotchas and things to watch out for -->
-
-## Context
-<!-- Add useful context about the codebase -->
-EOF
-    echo "✅ Created CLAUDE.md"
+    if [ -f "$SCRIPT_DIR/templates/CLAUDE.md" ]; then
+        cp "$SCRIPT_DIR/templates/CLAUDE.md" CLAUDE.md
+        # Replace placeholder with project name (macOS + Linux compatible)
+        sed -i "s/# Project Workflow/# $PROJECT_NAME Workflow/" CLAUDE.md 2>/dev/null || \
+        sed -i '' "s/# Project Workflow/# $PROJECT_NAME Workflow/" CLAUDE.md
+        echo "✅ Created CLAUDE.md with Ralph workflow"
+    else
+        echo "⚠️  No CLAUDE.md template found at $SCRIPT_DIR/templates/CLAUDE.md"
+    fi
+else
+    echo "ℹ️  CLAUDE.md already exists"
 fi
 
 # Init git if needed
@@ -71,7 +57,8 @@ fi
 
 echo ""
 echo "📋 Next steps:"
-echo "  1. Edit prd.json with your user stories"
-echo "     OR run /interview to generate it"
-echo "  2. Run: ~/ralph-system/ralph-loop.sh 20"
-echo "  3. Monitor: ~/ralph-system/ralph-status.sh"
+echo "  1. Run /interview to create user stories in prd.json"
+echo "  2. Review prd.json"
+echo "  3. Run: ~/ralph-system/ralph-loop.sh 20"
+echo ""
+echo "⚠️  Do NOT run ralph-loop.sh until prd.json has userStories!"

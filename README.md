@@ -2,25 +2,85 @@
 
 Autonomous development loop for Claude Code.
 
-## Scripts
+## Philosophy
 
-| Script | Purpose |
-|--------|---------|
-| `ralph-loop.sh <n>` | Run n iterations |
+Ralph is a **workflow**, not just a script. It enforces:
+1. **Interview first** - Understand before building
+2. **Structured tasks** - JSON PRD with testable criteria
+3. **Incremental progress** - One story at a time
+4. **Learning capture** - CLAUDE.md grows with each run
+
+## Correct Workflow
+
+```
+1. INTERVIEW    →  /interview idea.md
+                   Claude asks questions, understands scope
+
+2. PRD CREATED  →  prd.json with userStories
+                   Each story has acceptance criteria
+
+3. USER REVIEW  →  Verify stories look right
+                   Adjust if needed
+
+4. RALPH RUNS   →  ~/ralph-system/ralph-loop.sh 20
+                   Executes one story per iteration
+                   Updates passes: true when done
+
+5. COMPLETE     →  <promise>COMPLETE</promise>
+                   All stories pass, auto-validates
+```
+
+## ⚠️ NEVER run ralph-loop.sh without prd.json!
+
+The loop will refuse to start without structured tasks.
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `ralph-init.sh [name]` | Initialize new project |
+| `ralph-loop.sh [n]` | Run n iterations |
+| `ralph-status.sh` | Check progress |
 | `ralph-review.sh` | Code review agent |
 | `ralph-validate.sh` | Runtime validation |
 | `ralph-validate-all.sh` | Comprehensive test suite |
-| `ralph-decisions.sh` | Review decisions & blocked items |
-| `ralph-init.sh` | Initialize new project |
+| `ralph-archive.sh` | Manual archive |
+| `ralph-decisions.sh` | Review decisions |
 
-## Workflow
+## Files Per Project
 
-1. Create project, write rough idea.md
-2. `/interview @idea.md` - flesh out PRD with tasks
-3. `ralph-loop.sh 20` - run autonomous loop
-4. `ralph-decisions` - review decisions made
-5. `ralph-validate.sh` - verify everything works
-6. Repeat until complete
+| File | Purpose |
+|------|---------|
+| `prd.json` | User stories with passes status |
+| `progress.txt` | Log of completed work |
+| `CLAUDE.md` | Patterns/gotchas for this project |
+| `archive/` | Previous runs (auto-created) |
+| `.last-branch` | Branch tracking (auto-created) |
+
+## prd.json Format
+
+```json
+{
+  "project": "MyApp",
+  "branchName": "ralph/feature-name",
+  "description": "What we're building",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Task title",
+      "description": "As a user, I need X so that Y",
+      "acceptanceCriteria": [
+        "Testable outcome 1",
+        "Testable outcome 2",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
+```
 
 ## Task Types
 
@@ -30,59 +90,43 @@ PRD tasks use type prefixes:
 - `[design]` - Design choice: Claude logs reasoning, surfaces alternatives
 - `[review]` - Checkpoint: Run tests and audit
 
-Example:
-```markdown
-- [ ] [impl] Create firebase.ts - Firebase client init
-- [ ] [design] Define auth error handling - toast vs inline vs redirect
-- [ ] [review] Code review: Phase 1 security audit
+## Features
+
+- **JSON-first**: Structured, queryable tasks
+- **Auto-archive**: Previous runs saved on branch change
+- **Branch tracking**: Auto-creates feature branches
+- **CLAUDE.md updates**: Learnings persist across sessions
+- **Validation**: Won't run without proper PRD
+
+## Installation
+
+```bash
+git clone https://github.com/gstredny/ralph-system.git ~/ralph-system
+chmod +x ~/ralph-system/*.sh
 ```
 
-## Decision Logging
-
-When Claude makes design choices, it logs to progress.txt:
+Requires: `jq` for JSON parsing
+```bash
+sudo apt-get install -y jq  # Linux
+brew install jq             # Mac
 ```
-DECISION: [what was chosen] REASON: [why]
-```
-
-## Ambiguity Handling
-
-If a task is ambiguous about product behavior:
-```
-BLOCKED: [task name] - QUESTION: [specific question]
-```
-
-Claude skips blocked tasks. Human reviews before next run.
-
-## Files in Your Project
-
-| File | Purpose |
-|------|---------|
-| `prd.md` | Tasks with `- [ ]` checkboxes |
-| `progress.txt` | Session log, decisions, blocked items |
-| `CODE_REVIEW.md` | Output from ralph-review.sh |
 
 ## Quick Start
 
 ```bash
-# Initialize
-mkdir my-project && cd my-project
-~/ralph-system/ralph-init.sh my-project
+cd ~/my-project
+~/ralph-system/ralph-init.sh my-feature
 
-# Create PRD (interactive)
-/interview @idea.md
+# In Claude Code:
+/interview idea.md
 
-# Run loop
+# After prd.json created:
 ~/ralph-system/ralph-loop.sh 20
-
-# Check decisions
-ralph-decisions
-
-# Validate
-~/ralph-system/ralph-validate.sh
+~/ralph-system/ralph-status.sh
 ```
 
 ## Exit Conditions
 
-- All tasks checked `[x]` (outputs `<promise>COMPLETE</promise>`)
+- All tasks checked `passes: true` (outputs `<promise>COMPLETE</promise>`)
 - Max iterations reached
 - All remaining tasks blocked
