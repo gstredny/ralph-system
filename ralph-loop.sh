@@ -1,15 +1,40 @@
 #!/bin/bash
 # Ralph Wiggum - Long-running AI agent loop
 # Based on https://github.com/snarktank/ralph
-# Usage: ./ralph-loop.sh [max_iterations]
+# Usage: ./ralph-loop.sh [prd-file.json] [max_iterations]
+# Examples:
+#   ./ralph-loop.sh 20                        # Uses prd.json, 20 iterations
+#   ./ralph-loop.sh prd-budget-validation.json 20  # Uses named PRD
 
 set -e
 
-MAX_ITERATIONS=${1:-10}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(pwd)"
-PRD_FILE="$PROJECT_DIR/prd.json"
-PROGRESS_FILE="$PROJECT_DIR/progress.txt"
+
+# Parse arguments - detect if first arg is a file or number
+if [[ "$1" =~ ^[0-9]+$ ]]; then
+    # First arg is a number (iterations)
+    MAX_ITERATIONS=${1:-10}
+    PRD_FILE="$PROJECT_DIR/prd.json"
+elif [[ -n "$1" && "$1" == *.json ]]; then
+    # First arg is a JSON file
+    PRD_FILE="$PROJECT_DIR/$1"
+    MAX_ITERATIONS=${2:-10}
+else
+    # Default behavior
+    MAX_ITERATIONS=${1:-10}
+    PRD_FILE="$PROJECT_DIR/prd.json"
+fi
+
+# Extract feature name from PRD filename for progress file
+PRD_BASENAME=$(basename "$PRD_FILE" .json)
+if [[ "$PRD_BASENAME" == "prd" ]]; then
+    PROGRESS_FILE="$PROJECT_DIR/progress.txt"
+else
+    # prd-budget-validation.json -> progress-budget-validation.txt
+    FEATURE_NAME=${PRD_BASENAME#prd-}
+    PROGRESS_FILE="$PROJECT_DIR/progress-$FEATURE_NAME.txt"
+fi
 ARCHIVE_DIR="$PROJECT_DIR/archive"
 LAST_BRANCH_FILE="$PROJECT_DIR/.last-branch"
 PROMPT_FILE="$SCRIPT_DIR/templates/PROMPT.md"
@@ -20,12 +45,41 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Check prd.json exists
+# Check PRD file exists
 if [ ! -f "$PRD_FILE" ]; then
-    echo "❌ prd.json not found in $PROJECT_DIR"
-    echo "Run: ~/ralph-system/ralph-init.sh or /interview to create one"
+    echo "❌ PRD file not found: $PRD_FILE"
+    echo ""
+    echo "📋 Ralph Loop requires a structured PRD with user stories."
+    echo ""
+    echo "To create one:"
+    echo "  1. Create idea.md with your rough requirements"
+    echo "  2. Run: /interview idea.md  (creates prd-{feature}.json)"
+    echo "  3. Review the generated PRD"
+    echo "  4. Then run: ~/ralph-system/ralph-loop.sh"
+    echo ""
+    echo "Or use: ~/ralph-system/ralph-init.sh for blank template"
     exit 1
 fi
+
+# Validate PRD has userStories
+STORY_COUNT=$(jq '.userStories | length // 0' "$PRD_FILE" 2>/dev/null || echo "0")
+if [ "$STORY_COUNT" -eq 0 ]; then
+    echo "❌ PRD has no userStories: $PRD_FILE"
+    echo ""
+    echo "📋 Ralph Loop requires at least 1 user story with:"
+    echo "   - id: unique identifier"
+    echo "   - title: what to build"
+    echo "   - criteria: acceptance criteria"
+    echo "   - passes: false (until implemented)"
+    echo ""
+    echo "Example userStory:"
+    echo '  {"id": "US-001", "title": "Add login", "criteria": "User can log in", "passes": false}'
+    echo ""
+    echo "Generate stories with: /interview idea.md"
+    exit 1
+fi
+
+echo "📄 Using PRD: $(basename $PRD_FILE) ($STORY_COUNT stories)"
 
 # Archive previous run if branch changed
 if [ -f "$LAST_BRANCH_FILE" ]; then
@@ -99,7 +153,9 @@ for i in $(seq 1 $MAX_ITERATIONS); do
 
     # Run Claude with the prompt
     PROMPT=$(cat "$PROMPT_FILE")
-    OUTPUT=$(claude --dangerously-skip-permissions -p "@prd.json @progress.txt $PROMPT" 2>&1 | tee /dev/stderr) || true
+    PRD_BASENAME=$(basename "$PRD_FILE")
+    PROGRESS_BASENAME=$(basename "$PROGRESS_FILE")
+    OUTPUT=$(claude --dangerously-skip-permissions -p "@$PRD_BASENAME @$PROGRESS_BASENAME $PROMPT" 2>&1 | tee /dev/stderr) || true
 
     # Warn if CLAUDE.md not updated
     if ! git diff --name-only 2>/dev/null | grep -q "CLAUDE.md"; then
