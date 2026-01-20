@@ -50,16 +50,75 @@ try:
     branch = data.get('branchName', 'N/A')
     stories = data.get('userStories', [])
     passing = [s for s in stories if s.get('passes')]
-    failing = [s for s in stories if not s.get('passes')]
+    in_progress = [s for s in stories if s.get('status') == 'in_progress']
+    blocked = [s for s in stories if s.get('status') == 'blocked']
+    remaining = [s for s in stories if not s.get('passes') and s.get('status') not in ('blocked', 'in_progress')]
+
     print(f'   Project: {project}')
     print(f'   Branch: {branch}')
     print(f'   Progress: {len(passing)} / {len(stories)} stories')
-    if failing:
-        print(f'   Next: {failing[0][\"id\"]}: {failing[0][\"title\"][:45]}...')
+
+    if in_progress:
+        story = in_progress[0]
+        print(f'   ⏳ In Progress: {story[\"id\"]}: {story[\"title\"][:40]}...')
+        if story.get('lastAttempt'):
+            la = story['lastAttempt']
+            print(f'      Attempt #{la.get(\"attempts\", 1)}')
+            if la.get('blockers'):
+                print(f'      Blocker: {la[\"blockers\"][:50]}...')
+            if la.get('nextSteps'):
+                steps = la['nextSteps']
+                if isinstance(steps, list) and steps:
+                    print(f'      Next: {steps[0][:50]}...')
+    elif remaining:
+        story = sorted(remaining, key=lambda x: x.get('priority', 999))[0]
+        print(f'   Next: {story[\"id\"]}: {story[\"title\"][:45]}...')
     else:
         print('   ✅ All stories complete!')
+
+    if blocked:
+        print(f'   🚫 Blocked: {len(blocked)} stories')
 except Exception as e:
     print(f'   Error: {e}')
+"
+
+echo ""
+echo "⏳ In-Progress Details:"
+cat "$PRD_FILE" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    stories = data.get('userStories', [])
+    in_progress = [s for s in stories if s.get('status') == 'in_progress']
+
+    if not in_progress:
+        print('  None')
+    else:
+        for story in in_progress:
+            print(f'  {story[\"id\"]}: {story[\"title\"]}')
+            la = story.get('lastAttempt', {})
+            if la:
+                print(f'    Timestamp: {la.get(\"timestamp\", \"N/A\")}')
+                print(f'    Attempts: {la.get(\"attempts\", 1)}')
+                if la.get('learned'):
+                    print(f'    Learned: {la[\"learned\"][:80]}...' if len(la.get('learned',''))>80 else f'    Learned: {la.get(\"learned\",\"N/A\")}')
+                if la.get('completed'):
+                    completed = la['completed']
+                    if isinstance(completed, list):
+                        for item in completed[:3]:
+                            print(f'      ✓ {item}')
+                        if len(completed) > 3:
+                            print(f'      ... and {len(completed)-3} more')
+                if la.get('blockers'):
+                    print(f'    Blocker: {la[\"blockers\"]}')
+                if la.get('nextSteps'):
+                    steps = la['nextSteps']
+                    if isinstance(steps, list):
+                        print('    Next steps:')
+                        for step in steps[:3]:
+                            print(f'      → {step}')
+except Exception as e:
+    print(f'  Error: {e}')
 "
 
 echo ""
@@ -80,16 +139,23 @@ else
 fi
 
 echo ""
-echo "⚠️  Blocked items:"
-if [ -f "$PROGRESS_FILE" ]; then
-    blocked=$(grep -i "BLOCKED:" "$PROGRESS_FILE" 2>/dev/null)
-    if [ -n "$blocked" ]; then
-        echo "$blocked"
-    else
-        echo "  None"
-    fi
-else
-    echo "  No progress file"
-fi
+echo "🚫 Blocked stories:"
+cat "$PRD_FILE" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    stories = data.get('userStories', [])
+    blocked = [s for s in stories if s.get('status') == 'blocked']
+
+    if not blocked:
+        print('  None')
+    else:
+        for story in blocked:
+            print(f'  {story[\"id\"]}: {story[\"title\"]}')
+            if story.get('notes'):
+                print(f'    Reason: {story[\"notes\"][:60]}...' if len(story.get('notes',''))>60 else f'    Reason: {story.get(\"notes\")}')
+except Exception as e:
+    print(f'  Error: {e}')
+"
 
 echo "═══════════════════════════════════════"
